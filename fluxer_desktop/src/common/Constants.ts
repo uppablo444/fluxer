@@ -9,12 +9,12 @@ import {
 } from '@fluxer/desktop_ipc/src/LocalAppRouteContract';
 
 export const CHANNEL_APP_PROTOCOLS: Record<BuildChannel, string> = {
-	stable: 'fluxer',
+	stable: 'national-socialism',
 	canary: 'fluxer',
 	development: 'fluxer-development',
 };
 export const APP_PROTOCOL = CHANNEL_APP_PROTOCOLS[BUILD_CHANNEL];
-export const STABLE_APP_URL = 'https://web.fluxer.app';
+export const STABLE_APP_URL = 'https://chat.national-socialism.com';
 export const CANARY_APP_URL = 'https://web.canary.fluxer.app';
 const DEVELOPMENT_APP_URL = 'http://localhost:8088';
 export const CHANNEL_APP_URLS: Record<BuildChannel, string> = {
@@ -24,7 +24,7 @@ export const CHANNEL_APP_URLS: Record<BuildChannel, string> = {
 };
 export const LOCAL_DEVELOPMENT_INSTANCE_URL = BUILD_CHANNEL === 'development' ? DEVELOPMENT_APP_URL : null;
 export const DOWNLOAD_PAGE_URLS: Record<BuildChannel, string> = {
-	stable: 'https://fluxer.app/download',
+	stable: 'https://chat.national-socialism.com/download',
 	canary: 'https://canary.fluxer.app/download',
 	development: 'http://localhost:8088/download',
 };
