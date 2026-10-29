@@ -31,15 +31,15 @@ function resolveStaticCdnEndpoint(staticCdnEndpoint) {
 function generateManifest(staticCdnEndpoint) {
 	const cdn = resolveStaticCdnEndpoint(staticCdnEndpoint);
 	const manifest = {
-		name: 'Fluxer',
-		short_name: 'Fluxer',
+		name: 'NS',
+		short_name: 'NS',
 		description:
-			'Fluxer is a free and open source instant messaging and VoIP platform built for friends, groups, and communities.',
+			'NS is a chat app for friends, groups and communities.',
 		id: '/',
 		start_url: '/app',
 		display: 'standalone',
 		orientation: 'portrait-primary',
-		theme_color: '#4641D9',
+		theme_color: '#5865F2',
 		background_color: '#2b2d31',
 		categories: ['social', 'communication'],
 		lang: 'en',
@@ -86,7 +86,7 @@ function generateBrowserConfig(staticCdnEndpoint) {
   <msapplication>
     <tile>
       <square150x150logo src="${cdn}/web/mstile-150x150.png"/>
-      <TileColor>#4641D9</TileColor>
+      <TileColor>#5865F2</TileColor>
     </tile>
   </msapplication>
 </browserconfig>`;

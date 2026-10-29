@@ -8,9 +8,9 @@ const {promisify} = require('node:util');
 const execFileAsync = promisify(execFile);
 const CHANNELS = {
 	stable: {
-		productName: 'Fluxer',
+		productName: 'NS',
 		linuxOptDirName: 'Fluxer',
-		artifactProductName: 'Fluxer',
+		artifactProductName: 'NS',
 		appId: 'app.fluxer',
 		iconDirectory: 'icons-stable',
 		packageName: 'fluxer_desktop',
