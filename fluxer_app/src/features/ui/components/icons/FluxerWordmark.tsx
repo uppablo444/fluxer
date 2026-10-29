@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import {DEFAULT_APP_SHELL_BRANDING, resolveAppShellBranding} from '@app/features/app/state/AppShellBranding';
+import {resolveAppShellBranding} from '@app/features/app/state/AppShellBranding';
 import RuntimeConfig from '@app/features/app/state/RuntimeConfig';
 import {type BrandSvgProps, getDataFlx, getImageSizingProps} from '@app/features/ui/components/icons/BrandImageUtils';
 import FluxerWordmarkMonochromeAsset from '@app/media/images/fluxer-logo-wordmark-monochrome.svg?react';
@@ -14,6 +14,9 @@ const APPLICATION_WORDMARK_DESCRIPTOR = msg({
 	message: '{productName} wordmark',
 	comment: 'Accessible label for the application wordmark.',
 });
+
+// The bundled wordmark assets spell this name, so only this product name may draw them.
+const BUNDLED_WORDMARK_PRODUCT_NAME = 'Fluxer';
 
 interface FluxerWordmarkProps extends BrandSvgProps {
 	variant?: 'default' | 'monochrome';
@@ -34,7 +37,7 @@ export const FluxerWordmark = observer(({variant = 'default', ...props}: FluxerW
 			/>
 		);
 	}
-	if (productName !== DEFAULT_APP_SHELL_BRANDING.productName) {
+	if (productName !== BUNDLED_WORDMARK_PRODUCT_NAME) {
 		const style: React.CSSProperties = {
 			...(props.style as React.CSSProperties | undefined),
 			alignItems: 'center',
