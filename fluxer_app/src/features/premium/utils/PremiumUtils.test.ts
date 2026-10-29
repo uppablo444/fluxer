@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import {PRODUCT_NAME} from '@app/features/app/config/ProductConstants';
 import DesktopRuntimeTransactions from '@app/features/app/state/DesktopRuntimeTransaction';
 import {runtimeSnapshotFromDiscovery} from '@app/features/app/state/InstanceSnapshotStore';
 import RuntimeConfig from '@app/features/app/state/RuntimeConfig';
@@ -58,7 +59,7 @@ describe('premium product name', () => {
 		desktopRuntime.required = true;
 		await RuntimeConfig.deactivate();
 		expect(getPremiumProductName()).toBe('Plutonium');
-		expect(getPremiumProductFullName()).toBe('Fluxer Plutonium');
+		expect(getPremiumProductFullName()).toBe(`${PRODUCT_NAME} Plutonium`);
 	});
 
 	test('falls back to the default premium name when the instance sends a blank one', () => {
