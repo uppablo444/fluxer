@@ -10,17 +10,20 @@
 #   bash ns/ns-deploy.sh --rollback    # go back to the stock upstream client (keeps the NS image)
 #
 # Options:
-#   --ns-ref REF       where the NS commits live (default: origin/ns/main)
+#   --ns-ref REF       where to take ns-apply.sh from (default: origin/ns/main)
 #   --revision SHA     pin to this full upstream commit instead of reading the running api image
 #   --upstream URL     upstream repository (default: https://github.com/fluxerapp/fluxer.git)
 #   --dry-run          stop after preparing the pinned source tree
 #   --keep-worktree    keep the build folder afterwards (for inspection)
 #   --use-image IMAGE  skip the build and switch to IMAGE, which must carry the label
-#                      ns.source=<pinned commit> (an image this script or CI built earlier)
+#                      ns.source-tree=<pinned source tree> (an image this script built earlier)
 #
-# What it never does: touch your working tree or uncommitted changes (it builds in a
-# separate git worktree), delete volumes or data, change any service except app-proxy,
-# or guess a revision. When the running revision cannot be read, it stops and says why.
+# How: a separate git worktree at that upstream revision, then deploy/self-hosting/ns/ns-apply.sh
+# (from the NS ref) applies the NS customizations with exact, verified edits.
+#
+# What it never does: touch your working tree or uncommitted changes, delete volumes or
+# data, change any service except app-proxy, or guess a revision. When the running
+# revision cannot be read, or an NS edit does not fit it, it stops and says why.
 
 set -euo pipefail
 
@@ -176,13 +179,12 @@ if ! git -C "$repo_root" cat-file -e "$revision^{commit}" 2>/dev/null; then
 	git -C "$repo_root" fetch --quiet upstream "$revision" || fail "Upstream does not have commit $revision."
 fi
 
-# The NS commits: on the NS ref but not in upstream main, oldest first, no merges.
-mapfile -t ns_commits < <(git -C "$repo_root" rev-list --reverse --no-merges "upstream/main..$ns_ref")
-[ "${#ns_commits[@]}" -gt 0 ] || fail "No NS commits found on $ns_ref (compared with upstream/main)."
-say "NS commits to apply on top (${#ns_commits[@]}):"
-for c in "${ns_commits[@]}"; do
-	printf '    %s\n' "$(git -C "$repo_root" log -1 --format='%h %s' "$c")"
-done
+# The NS customizations come from ns-apply.sh as it is on the NS ref.
+ns_ref_sha="$(git -C "$repo_root" rev-parse "$ns_ref^{commit}")"
+apply_script="$(mktemp)"
+git -C "$repo_root" show "$ns_ref_sha:deploy/self-hosting/ns/ns-apply.sh" > "$apply_script" ||
+	fail "$ns_ref has no deploy/self-hosting/ns/ns-apply.sh."
+say "NS customizations: ns-apply.sh from $ns_ref (${ns_ref_sha:0:12})"
 
 # --- 3. pinned source tree in a separate worktree ------------------------------
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -190,29 +192,29 @@ short_rev="${revision:0:12}"
 branch="ns/pinned-$short_rev-$stamp"
 worktree="$repo_root/.ns-build/$stamp"
 cleanup_worktree() {
+	rm -f "$apply_script"
 	if [ "$keep_worktree" -eq 0 ] && [ -d "$worktree" ]; then
-		git -C "$repo_root" cherry-pick --abort >/dev/null 2>&1 || true
 		git -C "$repo_root" worktree remove --force "$worktree" >/dev/null 2>&1 || true
 	fi
 }
 trap cleanup_worktree EXIT
 mkdir -p "$repo_root/.ns-build"
 git -C "$repo_root" worktree add --quiet -b "$branch" "$worktree" "$revision" || fail 'Could not create the build worktree.'
-for c in "${ns_commits[@]}"; do
-	if ! git -C "$worktree" -c user.name='NS deploy' -c user.email='ns-deploy@localhost' cherry-pick -x "$c" >/dev/null 2>&1; then
-		conflicts="$(git -C "$worktree" diff --name-only --diff-filter=U | sed 's/^/    /')"
-		git -C "$worktree" cherry-pick --abort >/dev/null 2>&1 || true
-		fail "NS commit $(git -C "$repo_root" log -1 --format='%h %s' "$c") does not apply cleanly on $short_rev.
-  Conflicting files:
-$conflicts
+if ! bash "$apply_script" "$worktree"; then
+	fail "The NS customizations do not apply to upstream $short_rev (see the STOP line above).
   The server keeps running the current client. Nothing was changed."
-	fi
-done
+fi
+git -C "$worktree" add -A
+git -C "$worktree" -c user.name='NS deploy' -c user.email='ns-deploy@localhost' \
+	commit --quiet -m "NS customizations on upstream $short_rev" \
+	-m "Applied by deploy/self-hosting/ns/ns-apply.sh from $ns_ref ($ns_ref_sha)." ||
+	fail 'Could not record the pinned source.'
 pinned_head="$(git -C "$worktree" rev-parse HEAD)"
-say "Pinned NS source ready: branch $branch ($pinned_head)"
+pinned_tree="$(git -C "$worktree" rev-parse 'HEAD^{tree}')"
+say "Pinned NS source ready: branch $branch (commit ${pinned_head:0:12}, tree ${pinned_tree:0:12})"
+git -C "$worktree" diff --stat HEAD~1 HEAD | tail -n1 | sed 's/^/[ns-deploy]  /'
 
 if [ "$dry_run" -eq 1 ]; then
-	git -C "$repo_root" log --oneline -n "$((${#ns_commits[@]} + 1))" "$branch"
 	say 'Dry run finished. Nothing was built or switched. The branch above stays for inspection.'
 	exit 0
 fi
@@ -221,9 +223,9 @@ fi
 docker info >/dev/null 2>&1 || fail 'Docker is not reachable.'
 if [ -n "$use_image" ]; then
 	docker image inspect "$use_image" >/dev/null 2>&1 || fail "Image $use_image is not on this machine."
-	image_source="$(docker image inspect -f '{{index .Config.Labels "ns.source"}}' "$use_image")"
-	if [ "$image_source" != "$pinned_head" ]; then
-		fail "Image $use_image was built from ${image_source:-an unknown commit}, not from the pinned source $pinned_head. Refusing to switch to it."
+	image_tree="$(docker image inspect -f '{{index .Config.Labels "ns.source-tree"}}' "$use_image")"
+	if [ "$image_tree" != "$pinned_tree" ]; then
+		fail "Image $use_image was built from source tree ${image_tree:-unknown}, not from the pinned tree $pinned_tree. Refusing to switch to it."
 	fi
 	image="$use_image"
 	say "Using the existing image $image (built from the pinned source)."
@@ -236,8 +238,8 @@ fi
 if [ -z "$build_version" ]; then
 	build_version="$(ns_running_build_version 2>/dev/null || true)"
 fi
-ns_version="${build_version:-ns}-ns.${pinned_head:0:7}"
-image="ns/app-proxy:${short_rev}-ns.${pinned_head:0:7}"
+ns_version="${build_version:-ns}-ns.${pinned_tree:0:7}"
+image="ns/app-proxy:${short_rev}-ns.${pinned_tree:0:7}"
 say "Building $image (this takes 20-60 minutes the first time)."
 docker build \
 	-f "$worktree/fluxer_app_proxy/Dockerfile" \
@@ -248,6 +250,7 @@ docker build \
 	--build-arg SOURCE_SHA="$pinned_head" \
 	--label "ns.upstream-revision=$revision" \
 	--label "ns.source=$pinned_head" \
+	--label "ns.source-tree=$pinned_tree" \
 	-t "$image" \
 	"$worktree" || fail 'The build failed. The server keeps running the current client. Nothing was changed.'
 fi
@@ -281,7 +284,7 @@ restore_previous() {
 cat > "$OVERLAY" <<OVERLAY_EOF
 # Written by ns/ns-deploy.sh on $stamp. Pins the NS web client.
 # Upstream revision (matches the running api): $revision
-# NS source commit: $pinned_head
+# NS source commit: $pinned_head (tree $pinned_tree)
 # Previous app-proxy image: $previous_image
 # Roll back to the stock client with: bash ns/ns-deploy.sh --rollback
 services:
