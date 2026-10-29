@@ -230,10 +230,6 @@ export const START_A_CALL_IN_A_DM_OR_GROUP_DESCRIPTOR = msg({
 	message: 'Start a call in a DM or group',
 	comment: 'Keyboard shortcut action label shown in the shortcuts list and keybind editor. Keep short, sentence case.',
 });
-export const TOGGLE_THE_SOUNDBOARD_DESCRIPTOR = msg({
-	message: 'Toggle the soundboard',
-	comment: 'Keyboard shortcut action label shown in the shortcuts list and keybind editor. Keep short, sentence case.',
-});
 export const EXPAND_OR_COLLAPSE_COMPACT_CALL_VIEW_DESCRIPTOR = msg({
 	message: 'Expand or collapse compact call view',
 	comment: 'Keyboard shortcut action label shown in the shortcuts list and keybind editor. Keep short, sentence case.',

@@ -97,7 +97,6 @@ import {
 	TOGGLE_THE_GIF_PICKER_DESCRIPTOR,
 	TOGGLE_THE_INBOX_DESCRIPTOR,
 	TOGGLE_THE_MEMBER_LIST_OR_VOICE_CHAT_DESCRIPTOR,
-	TOGGLE_THE_SOUNDBOARD_DESCRIPTOR,
 	TOGGLE_THE_STICKER_PICKER_DESCRIPTOR,
 	TOGGLE_VOICE_ACTIVITY_DESCRIPTOR,
 	UPLOAD_A_FILE_DESCRIPTOR,
@@ -667,13 +666,6 @@ const getDefaultKeybinds = (
 			action: 'voice_start_dm_call',
 			label: i18n._(START_A_CALL_IN_A_DM_OR_GROUP_DESCRIPTOR),
 			combo: {key: '`', code: 'Backquote', ctrl: true},
-			section: 'voice_and_video',
-		},
-		{
-			action: 'voice_toggle_soundboard',
-			label: i18n._(TOGGLE_THE_SOUNDBOARD_DESCRIPTOR),
-			combo: {key: 'b', ctrlOrMeta: true, shift: true},
-			assignable: true,
 			section: 'voice_and_video',
 		},
 		{

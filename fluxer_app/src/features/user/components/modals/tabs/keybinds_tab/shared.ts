@@ -95,7 +95,6 @@ const SECTION_DISPLAY_ORDER: Partial<Record<KeybindSection, ReadonlyArray<Keybin
 	voice_and_video: [
 		'voice_toggle_mute',
 		'voice_toggle_deafen',
-		'voice_toggle_soundboard',
 		'voice_start_dm_call',
 		'voice_answer_call',
 		'voice_decline_call',
