@@ -65,3 +65,6 @@
 
 **/.DS_Store
 **/Thumbs.db
+
+# NS: pinned build worktrees made by deploy/self-hosting/ns/ns-deploy.sh
+/.ns-build/

@@ -2,3 +2,9 @@
 .env.*
 
 !.env.example
+
+# NS operator scripts (ns/ns-deploy.sh, ns/ns-backup.sh)
+docker-compose.ns.yml
+docker-compose.ns.yml.ns-backup-*
+.env.ns-*
+backups/
